@@ -1,0 +1,5 @@
+# Local dev signer state (contains a private key / tx ledger)
+dev/.agent-key.json
+dev/.ledger.json
+# Dependencies live at the skill root, never under scripts/
+node_modules/

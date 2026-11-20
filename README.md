@@ -1,43 +1,38 @@
 # butler-skill-prediction-market
 
-Butler skill for prediction market trading. Gives Butler a playbook for searching markets,
-reading an owner's prediction account, and filing buy and sell orders for approval.
+Butler skill for Outcome.xyz prediction markets (Hyperliquid HIP-4). This repository is the
+**only** place Butler learns Outcome.xyz and Hyperliquid: bevo-server and the container hold
+no venue knowledge. They provide a generic signer (`BEVO_SIGNER`, backed by `bevo-wallet`)
+for the owner's or a duty's main wallet and for a server-held agent key.
 
-**Current venue**: Outcome.xyz (Hyperliquid HIP-4)  
-**Planned**: Kalshi, Polymarket API (distinct from `butler-skill-polymarket-web`)
+## Layout
 
-## What this skill does
+| Path | What |
+| --- | --- |
+| `SKILL.md` | The playbook the model follows (hub standard: seven sections, 12,000-char body) |
+| `references/commands.md` | Every script's flags, statuses, output fields and error codes |
+| `references/outcome-sdk.md` | HIP-4 / Outcome.xyz concepts and which SDK call each script makes |
+| `references/hyperliquid-sdk.md` | Deposit, withdraw, perps vs spot, agent keys, nonces |
+| `scripts/*.mjs`, `scripts/lib/common.mjs` | The only code that touches the venues; one JSON envelope per run |
+| `package.json`, `package-lock.json` | Pinned `@outcome.xyz/hip4` 1.3.0, `@nktkas/hyperliquid` 0.33.3, `viem`; at the skill root, never under `scripts/` |
+| `dev/` | Local signer for mainnet tests from a Mac (`dev/README.md`); not published |
 
-When installed, Butler can:
+Flow: `status` → `deposit` → `setup_agent [--rotate]` → `ensure_spot` → `place_bet` /
+`cancel`; exit: `withdraw` (to the same wallet; `ensure_perps` first when the money sits
+in spot); reads `markets`, `account`. Unit tests (no network): `npm test`.
 
-- List supported prediction market venues
-- Search open markets by keyword or category
-- Read the owner's prediction account balance and open positions
-- File buy and sell orders (market or limit) — each one a card the owner approves in the
-  app before anything is placed
+## Publishing notes
 
-Deposits and withdrawals are not part of this skill.
-
-## Commands it uses
-
-| Command | Purpose |
-|---------|---------|
-| `bevo-read prediction-venues` | List venues and their status |
-| `bevo-read prediction-markets [--query …] [--venue id]` | Search open markets |
-| `bevo-read prediction-account [--venue id]` | Read balance and positions |
-| `bevo-prediction …` | File a buy or sell order card |
-
-Both commands are provided by the Butler agent runtime; the skill installs only where they
-are available. `references/commands.md` has every flag.
-
-## Connecting a venue
-
-The owner connects each venue in the Butler app. Butler cannot do this step itself, and it
-never sees or handles a private key.
+- The hub publishes `SKILL.md` and `references/**/*.md`; publishing `scripts/**/*.mjs` and
+  the root package files needs the hub and container rule change described in the
+  workspace plan (`docs/plans/skill-driven-dapp-refactor.md` §2.5).
+- Validate with `python3 <butler-skills>/scripts/validate.py --standalone <a copy without node_modules>`.
+- Bump `version` and add a `CHANGELOG.md` entry for every change, and bump the `ref` in
+  `butler-skills/skills.json` in the same change-set.
 
 ## Related skills
 
 | Package | What it covers |
-|---------|---------------|
-| `butler-skill-polymarket-web` | Polymarket via browser automation (separate, not API) |
+| --- | --- |
+| `butler-skill-polymarket-web` | Polymarket via browser automation |
 | `butler-skill-variational` | Variational Omni perps |
